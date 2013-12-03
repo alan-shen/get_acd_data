@@ -37,48 +37,53 @@
  *  
  **/
 
-#define IMEI_LEN                (15)
-#define BTMAC_ADDRESS_LEN       (6)
-#define ACER_UUID_LEN           (IMEI_LEN+BTMAC_ADDRESS_LEN+20)
-int main(int argc, char **args)
+
+int getacd_string(uint8_t index)
 {
-        char uuid[ACER_UUID_LEN];
-        /* Get IMEI, because there is no IMEI in ducati, so we set it all zero here */
-        char *vIMEIno = "000000000000000";    
+        unsigned char *ChaabiDataAddr = NULL;
+        int length = get_customer_data( index, (void ** const) &ChaabiDataAddr);
+	int i;
 
-        /* Get BT Mac addr from ACD field */
-        const unsigned char NullBTMacAddr[BTMAC_ADDRESS_LEN] = { 0, 0, 0, 0, 0, 0 }; 
+	printf("\tCHAABI Read ACD Index %d, Count: %4d, Data: %s", index, length, ChaabiDataAddr);
+	printf("\n");
 
-        uint8_t vAcdIndex = ACD_BT_MAC_ADDR_FIELD_INDEX;
-        unsigned char *ChaabiBTMacAddr = NULL;
+	return 0;
+}
 
-        if ( get_customer_data( vAcdIndex, (void ** const) &ChaabiBTMacAddr) != BTMAC_ADDRESS_LEN ){
-                ChaabiBTMacAddr = (unsigned char *) malloc(BTMAC_ADDRESS_LEN);
-                memcpy(ChaabiBTMacAddr, NullBTMacAddr, BTMAC_ADDRESS_LEN);
-                printf("[%s:%d] Chaabi BTMac not found!\n", __func__, __LINE__);
-        }    
+int getacd_hex(uint8_t index)
+{
+        unsigned char *ChaabiDataAddr = NULL;
+        int length = get_customer_data( index, (void ** const) &ChaabiDataAddr);
+	int i;
 
-        int num = get_customer_data( vAcdIndex, (void ** const) &ChaabiBTMacAddr);
-	printf("CHAABI Read Count: %d\n", num);
-        printf("CHAABI BTMac adr is %02x:%02x:%02x:%02x:%02x:%02x\n", ChaabiBTMacAddr[0], ChaabiBTMacAddr[1], ChaabiBTMacAddr[2],
-                                                                ChaabiBTMacAddr[3], ChaabiBTMacAddr[4], ChaabiBTMacAddr[5]);
+	printf("\tCHAABI Read ACD Index %d, Count: %4d, Data: ", index, length);
+	for( i=0; i<length; i++){
+		printf("%02x", ChaabiDataAddr[i]);
+		if( i != length-1){
+			printf(":");
+		}
+	}
+	printf("\n");
 
-        /* Set the property "ro.aceruuid" */
+#if 0
 	int i, j;
 	char vBTMac[20];
 	for ( i=0,j=0; i<BTMAC_ADDRESS_LEN*2,j<BTMAC_ADDRESS_LEN; i+=2,j++ ){
 		sprintf( &vBTMac[i],   "%x", (ChaabiBTMacAddr[j]&0xf0)>>4 );
 		sprintf( &vBTMac[i+1], "%x", (ChaabiBTMacAddr[j]&0x0f) );
 		printf("%02x:%c%c\n", ChaabiBTMacAddr[j], vBTMac[i], vBTMac[i+1]  );
-	}
+	}	
+#endif
 
-	printf(">>>btmac: %s\n", vBTMac);
-        property_set( "shen.acerbtmac", (const char *)vBTMac );
+	return 0;
+}
 
-        strcpy( uuid, vIMEIno );
-	strcat( uuid, vBTMac );
-	printf(">>> uuid: %s\n", uuid);
-        property_set( "shen.aceruuid", (const char *)uuid );
+int main(int argc, char **args)
+{
+	getacd_hex( ACD_BT_MAC_ADDR_FIELD_INDEX );
+	getacd_hex( ACD_WLAN_MAC_ADDR_FIELD_INDEX );
+
+	getacd_string( ACD_CUSTOMER_RESERVED_15_FIELD_INDEX );
 
         return 0;
 }
