@@ -1,46 +1,46 @@
-#include <stdio.h>                                                                                                                           
-#include <stdlib.h>                                                                                                                          
-#include <string.h>                                                                                                                          
-#include <unistd.h>                                                                                                                          
-#include <fcntl.h>                                                                                                                           
-#include <ctype.h>                                                                                                                           
-#include <signal.h>                                                                                                                          
-#include <sys/wait.h>                                                                                                                        
-#include <sys/mount.h>                                                                                                                       
-#include <sys/stat.h>                                                                                                                        
-#include <sys/poll.h>                                                                                                                        
-#include <errno.h>                                                                                                                           
-#include <stdarg.h>                                                                                                                          
-#include <mtd/mtd-user.h>                                                                                                                    
-#include <sys/types.h>                                                                                                                       
-#include <sys/socket.h>                                                                                                                      
-#include <sys/un.h>                                                                                                                          
-#include <sys/personality.h>
+#include <stdio.h> 
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/system_properties.h>
+#include <cutils/properties.h>
 
-#include <linux/kd.h>                                                                                                                        
-                                                                                                                                             
-#ifdef HAVE_SELINUX                                                                                                                          
-#include <selinux/selinux.h>                                                                                                                 
-#include <selinux/label.h>                                                                                                                   
-#include <selinux/android.h>                                                                                                                 
-#endif                                                                                                                                       
-                                                                                                                                             
-#include <libgen.h>                                                                                                                          
-                                                                                                                                             
-#include <cutils/list.h>                                                                                                                     
-#include <cutils/sockets.h>                                                                                                                  
-#include <cutils/iosched_policy.h>                                                                                                           
-#include <private/android_filesystem_config.h>                                                                                               
-#include <termios.h>                                                                                                                         
-                                                                                                                                             
-#include <sys/system_properties.h>                                                                                                           
-                                                                                                                                             
 #include "umip_access.h"
+
+/*
+ * PATH: prebuilts/intel/hardware/intel/prebuilts/redhookbay/chaabi/Lib/umip_access.h
+ * DESP:
+ * 
+ */
+
+/*
+ * PATH: prebuilts/intel/hardware/intel/prebuilts/redhookbay/chaabi/Lib/acd_reference.h
+ * DESP: Android Customer Data field indices
+ * 
+ * #define ACD_WV_KEYBOX_FIELD_INDEX               1
+ * #define ACD_RESERVED_2_FIELD_INDEX              2
+ * #define ACD_RESERVED_3_FIELD_INDEX              3
+ * #define ACD_RESERVED_4_FIELD_INDEX              4
+ * #define ACD_RESERVED_5_FIELD_INDEX              5
+ * #define ACD_WV_DEVICE_ID_FIELD_INDEX            6
+ * #define ACD_PRODUCT_ID_FIELD_INDEX              7
+ * #define ACD_SOFT_PLATFORM_ID_FIELD_INDEX        8
+ * #define ACD_CUSTOMER_RESERVED_9_FIELD_INDEX     9
+ * #define ACD_WLAN_MAC_ADDR_FIELD_INDEX           10
+ * #define ACD_BT_MAC_ADDR_FIELD_INDEX             11
+ * #define ACD_CUSTOMER_RESERVED_15_FIELD_INDEX    15
+ * #define ACD_CUSTOMER_RESERVED_16_FIELD_INDEX    16
+ * #define ACD_CUSTOMER_RESERVED_17_FIELD_INDEX    17
+ * #define ACD_CUSTOMER_RESERVED_18_FIELD_INDEX    18
+ *  
+ **/
 
 #define IMEI_LEN                (15)
 #define BTMAC_ADDRESS_LEN       (6)
 #define ACER_UUID_LEN           (IMEI_LEN+BTMAC_ADDRESS_LEN+20)
-int main(int nargs, char **args)
+int main(int argc, char **args)
 {
         char uuid[ACER_UUID_LEN];
         /* Get IMEI, because there is no IMEI in ducati, so we set it all zero here */
@@ -64,8 +64,6 @@ int main(int nargs, char **args)
                                                                 ChaabiBTMacAddr[3], ChaabiBTMacAddr[4], ChaabiBTMacAddr[5]);
 
         /* Set the property "ro.aceruuid" */
-        strcpy( uuid, vIMEIno );
-
 	int i, j;
 	char vBTMac[20];
 	for ( i=0,j=0; i<BTMAC_ADDRESS_LEN*2,j<BTMAC_ADDRESS_LEN; i+=2,j++ ){
@@ -74,15 +72,14 @@ int main(int nargs, char **args)
 		printf("%02x:%c%c\n", ChaabiBTMacAddr[j], vBTMac[i], vBTMac[i+1]  );
 	}
 
-	printf("btmac: %s\n", vBTMac);
-	printf(" uuid: %s\n", uuid);
+	printf(">>>btmac: %s\n", vBTMac);
+        property_set( "shen.acerbtmac", (const char *)vBTMac );
 
-        //property_set( "shen.acerbtmac", (char *)ChaabiBTMacAddr );
-        property_set( "shen.acerbtmac", (char *)vBTMac );
+        strcpy( uuid, vIMEIno );
 	strcat( uuid, vBTMac );
-        property_set( "shen.aceruuid", uuid );
+	printf(">>> uuid: %s\n", uuid);
+        property_set( "shen.aceruuid", (const char *)uuid );
 
         return 0;
 }
-
 
